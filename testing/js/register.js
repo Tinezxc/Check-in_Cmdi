@@ -1,5 +1,7 @@
 /* ==========================================================
-   HAVEN — Register page functions
+   HAVEN — Register page
+   Saves the new account to localStorage so login + profile
+   can pick it up.
    ========================================================== */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -8,20 +10,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerBtn = document.getElementById('registerBtn');
 
     /* ==========================================
-       1) CHECK-IN DATE — smart input behavior
+       1) CHECK-IN DATE — smart input behaviour
        ========================================== */
     function formatDisplay(dateStr) {
         if (!dateStr) return '';
         const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
         if (m) return `${m[2]}/${m[3]}/${m[1]}`;
-        return dateStr; // already formatted or invalid
+        return dateStr;
     }
 
     if (checkinInput) {
         checkinInput.type = 'text';
         checkinInput.placeholder = 'MM/DD/YYYY';
 
-        // On focus → switch to a native date picker
         checkinInput.addEventListener('focus', () => {
             const current = checkinInput.value;
             if (current) {
@@ -36,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // On blur → switch back to text with formatted value
         checkinInput.addEventListener('blur', () => {
             const v = checkinInput.value;
             checkinInput.type = 'text';
@@ -97,7 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return '';
     }
 
-    // 0 = empty, 1 = weak, 2 = fair, 3 = good, 4 = strong
     function getStrengthLevel(pw) {
         if (!pw) return 0;
         let score = 0;
@@ -106,11 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
         if (/\d/.test(pw)) score++;
         if (/[^A-Za-z0-9]/.test(pw)) score++;
-
-        // Breaks a rule → capped at "fair"
         if (getPasswordError(pw)) return Math.max(1, Math.min(score, 2));
-
-        // Passes all rules: 8–11 chars = good, 12+ = strong
         return score >= 5 ? 4 : 3;
     }
 
@@ -134,18 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 minLength: 'Please enter your full name.'
             }
         },
-        'institution': {
-            required: true,
-            messages: { required: 'Institution is required.' }
-        },
-        'branch': {
-            required: true,
-            messages: { required: 'Branch is required.' }
-        },
-        'unit': {
-            required: true,
-            messages: { required: 'Unit is required.' }
-        },
+        'institution': { required: true, messages: { required: 'Institution is required.' } },
+        'branch':      { required: true, messages: { required: 'Branch is required.' } },
+        'unit':        { required: true, messages: { required: 'Unit is required.' } },
         'contact': {
             required: true,
             pattern: /^[\d\s+\-()]{7,}$/,
@@ -154,14 +140,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 pattern: 'Please enter a valid phone number.'
             }
         },
-        'address': {
-            required: true,
-            messages: { required: 'Address is required.' }
-        },
+        'address': { required: true, messages: { required: 'Address is required.' } },
         'checkin': {
             required: true,
             validate: (v) => {
-                const d = new Date(v); // accepts MM/DD/YYYY or YYYY-MM-DD
+                const d = new Date(v);
                 return !isNaN(d.getTime());
             },
             messages: {
@@ -172,9 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'password': {
             required: true,
             validate: (v) => getPasswordError(v) || true,
-            messages: {
-                required: 'Password is required.'
-            }
+            messages: { required: 'Password is required.' }
         },
         'confirm-password': {
             required: true,
@@ -203,13 +184,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.error-msg').forEach((e) => (e.textContent = ''));
     }
 
-    /* Validate a single field. Returns true if valid. */
     function validateField(fieldId) {
         const rule = rules[fieldId];
         const input = document.getElementById(fieldId);
         if (!rule || !input) return true;
 
-        // Passwords are never trimmed
         const isPassword = fieldId === 'password' || fieldId === 'confirm-password';
         const value = isPassword ? input.value : input.value.trim();
 
@@ -223,13 +202,10 @@ document.addEventListener('DOMContentLoaded', () => {
             showError(fieldId, rule.messages.minLength);
             return false;
         }
-
         if (rule.pattern && !rule.pattern.test(value)) {
             showError(fieldId, rule.messages.pattern);
             return false;
         }
-
-        // Custom validator (returns true, false, or an error string)
         if (rule.validate) {
             const result = rule.validate(value);
             if (result !== true) {
@@ -237,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return false;
             }
         }
-
         if (rule.matchField) {
             const other = document.getElementById(rule.matchField);
             if (other && value !== other.value) {
@@ -250,7 +225,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    /* Validate the whole form. Focuses the first invalid field. */
     function validateForm() {
         capFields.forEach((id) => {
             const el = document.getElementById(id);
@@ -277,23 +251,19 @@ document.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('blur', () => validateField(fieldId));
         input.addEventListener('input', () => {
             const group = input.closest('.form-group');
-            if (group && group.classList.contains('error')) {
-                validateField(fieldId);
-            }
+            if (group && group.classList.contains('error')) validateField(fieldId);
         });
     });
 
     const passwordInput = document.getElementById('password');
     const confirmInput = document.getElementById('confirm-password');
 
-    // Live match check for confirm-password
     if (passwordInput && confirmInput) {
         passwordInput.addEventListener('input', () => {
             if (confirmInput.value) validateField('confirm-password');
         });
     }
 
-    // Live strength meter
     const meter = document.getElementById('pwMeter');
     const meterLabel = document.getElementById('pwStrength');
     const strengthLabels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
@@ -302,14 +272,12 @@ document.addEventListener('DOMContentLoaded', () => {
         passwordInput.addEventListener('input', () => {
             const level = getStrengthLevel(passwordInput.value);
             meter.dataset.level = level;
-            if (meterLabel) {
-                meterLabel.textContent = level ? strengthLabels[level] : '';
-            }
+            if (meterLabel) meterLabel.textContent = level ? strengthLabels[level] : '';
         });
     }
 
     /* ==========================================
-       6) PASSWORD HELP — checklist, panel, show/hide
+       6) PASSWORD HELP
        ========================================== */
     const pwChecks = {
         len:      (pw) => pw.length >= 8,
@@ -335,7 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
         passwordInput.addEventListener('input', () => updateChecklist(passwordInput.value));
     }
 
-    // Show the help panel when the password field is used
     const pwHelp = document.getElementById('pwHelp');
     if (passwordInput && pwHelp) {
         const openHelp = () => pwHelp.classList.add('open');
@@ -346,14 +313,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Show / hide password toggles
     document.querySelectorAll('.toggle-pw').forEach((btn) => {
         const input = document.getElementById(btn.dataset.target);
         if (!input) return;
-
-        // Keep focus in the input so clicking the eye doesn't trigger validation
         btn.addEventListener('mousedown', (e) => e.preventDefault());
-
         btn.addEventListener('click', () => {
             const show = input.type === 'password';
             input.type = show ? 'text' : 'password';
@@ -364,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ==========================================
-       7) FORM SUBMIT
+       7) FORM SUBMIT — SAVE ACCOUNT
        ========================================== */
     form?.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -384,13 +347,69 @@ document.addEventListener('DOMContentLoaded', () => {
         if (label) label.hidden = true;
         if (spinner) spinner.hidden = false;
 
-        // Simulate an API call
         setTimeout(() => {
             registerBtn.disabled = false;
             if (label) label.hidden = false;
             if (spinner) spinner.hidden = true;
 
-            window.location.href = 'index.html';
+            try {
+                const f = document.getElementById('registerForm');
+                const get = (id) => (f?.querySelector(`#${id}`)?.value || '').trim();
+
+                const loginId = get('trainee-id');
+                const password = f?.querySelector('#password')?.value || '';
+
+                // Derive guestId (TR-xxxx) and regId (loginId)
+                const numMatch = /(\d+)$/.exec(loginId);
+                const guestId = numMatch ? `TR-${numMatch[1].padStart(4, '0')}` : `TR-${Date.now()}`;
+
+                // Parse check-in date (accepts MM/DD/YYYY or YYYY-MM-DD)
+                const rawCheckin = get('checkin');
+                let checkIn = rawCheckin;
+                const mdY = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(rawCheckin);
+                if (mdY) {
+                    checkIn = `${mdY[3]}-${mdY[1].padStart(2, '0')}-${mdY[2].padStart(2, '0')}`;
+                }
+
+                const profile = {
+                    loginId,
+                    name:        get('fullname'),
+                    email:       '',
+                    phone:       get('contact'),
+                    dob:         '',
+                    nationality: '',
+                    institution: get('institution'),
+                    branch:      get('branch'),
+                    idType:      'Student ID',
+                    idNumber:    '',
+                    room:        get('unit'),
+                    floor:       null,
+                    checkIn,
+                    checkOut:    '',
+                    status:      'arriving',
+                    address:     get('address'),
+                    regId:       loginId,
+                    guestId
+                };
+
+                const raw = localStorage.getItem('haven.accounts');
+                const accounts = raw ? JSON.parse(raw) : {};
+
+                if (accounts[loginId]) {
+                    alert(`An account with the ID "${loginId}" already exists. Please use a different ID or sign in.`);
+                    return;
+                }
+
+                accounts[loginId] = { password, profile };
+                localStorage.setItem('haven.accounts', JSON.stringify(accounts));
+            } catch (err) {
+                console.error('Could not save account:', err);
+                alert('Could not save your account. Please try again.');
+                return;
+            }
+
+            // Redirect to login with a success notice
+            window.location.href = 'index.html?registered=1';
         }, 900);
     });
 
@@ -411,13 +430,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Escape' && e.target.tagName === 'INPUT') {
             e.target.value = '';
             clearError(e.target.id);
-            // Fires the input listeners so the meter and checklist reset too
             e.target.dispatchEvent(new Event('input', { bubbles: true }));
         }
     });
 
     /* ==========================================
-       9) SHAKE ANIMATION (inject once)
+       9) SHAKE ANIMATION
        ========================================== */
     if (!document.getElementById('registerShakeCSS')) {
         const style = document.createElement('style');

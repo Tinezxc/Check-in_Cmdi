@@ -740,3 +740,259 @@ a { color: inherit; text-decoration: none; }
     outline-offset: 2px;
     border-radius: 4px;
 }
+
+/* ==========================================
+   QR BUTTON + MODAL
+   ========================================== */
+.chip-qr {
+    cursor: pointer;
+    background: var(--green-dark);
+    color: #fff;
+    border-color: var(--green-dark);
+    font-weight: 500;
+    transition: background 0.15s, transform 0.15s;
+}
+.chip-qr:hover { background: #12271f; transform: translateY(-1px); }
+.chip-qr:focus-visible { outline: 2px solid var(--green-accent); outline-offset: 2px; }
+.chip-qr svg { color: var(--green-light); }
+
+.qr-modal {
+    width: min(420px, 100%);
+}
+.qr-body {
+    align-items: center;
+    text-align: center;
+    padding: var(--s-5);
+}
+.qr-frame {
+    width: 240px;
+    height: 240px;
+    margin: 0 auto var(--s-4);
+    padding: 12px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    display: grid;
+    place-items: center;
+    box-shadow: var(--shadow-sm);
+}
+.qr-frame svg { display: block; }
+.qr-frame.is-error {
+    color: var(--status-red-fg);
+    font-size: 0.8rem;
+    padding: var(--s-4);
+    background: var(--status-red-bg);
+    border-color: var(--status-red-fg);
+}
+.qr-caption {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 4px;
+}
+.qr-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin-bottom: var(--s-4);
+}
+.qr-link-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    width: 100%;
+    padding: var(--s-2) var(--s-3);
+    background: var(--bg-cream);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+}
+.qr-link {
+    flex: 1;
+    font-family: 'Menlo', 'SF Mono', Consolas, monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* ==========================================
+   QR POPOUT (prominent overlay card)
+   ========================================== */
+.qr-popout {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    padding: var(--s-4);
+    background: rgba(20, 28, 24, 0.55);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+.qr-popout.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.qr-popout-card {
+    position: relative;
+    width: min(400px, 100%);
+    background: #fff;
+    border-radius: 20px;
+    padding: var(--s-6) var(--s-5) var(--s-5);
+    text-align: center;
+    box-shadow:
+        0 24px 60px rgba(20, 28, 24, 0.25),
+        0 8px 20px rgba(20, 28, 24, 0.12);
+    transform: scale(0.92) translateY(12px);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.qr-popout.open .qr-popout-card {
+    transform: scale(1) translateY(0);
+}
+
+.qr-popout-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.qr-popout-close:hover {
+    background: var(--bg-cream);
+    color: var(--text-main);
+}
+
+.qr-popout-eyebrow {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--green-mid);
+    margin-bottom: 6px;
+}
+.qr-popout-title {
+    font-family: var(--font-serif);
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: var(--green-dark);
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
+.qr-popout-sub {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: var(--s-5);
+}
+.qr-popout-sub strong {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.qr-popout-frame {
+    width: 240px;
+    height: 240px;
+    margin: 0 auto var(--s-4);
+    padding: 10px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 0 0 1px rgba(75, 124, 92, 0.06);
+}
+.qr-popout-frame svg { display: block; }
+.qr-popout-frame.is-error {
+    color: var(--status-red-fg);
+    font-size: 0.8rem;
+    padding: var(--s-4);
+    background: var(--status-red-bg);
+    border-color: var(--status-red-fg);
+}
+
+.qr-popout-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+    margin-bottom: var(--s-4);
+    padding: 0 var(--s-3);
+}
+
+.qr-popout-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px 8px 12px;
+    background: var(--bg-cream);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: var(--s-4);
+}
+.qr-popout-link code {
+    flex: 1;
+    font-family: 'Menlo', 'SF Mono', Consolas, monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.qr-popout-copy {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--border-strong);
+    background: #fff;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.qr-popout-copy:hover {
+    background: var(--green-light);
+    border-color: var(--green-accent);
+    color: var(--green-dark);
+}
+.qr-popout-copy.copied {
+    background: var(--status-green-bg);
+    border-color: var(--status-green-fg);
+    color: var(--status-green-fg);
+}
+
+.qr-popout-done {
+    width: 100%;
+    padding: 12px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--green-dark);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+.qr-popout-done:hover { background: #12271f; }
+.qr-popout-done:active { transform: scale(0.98); }
+
+/* Mobile */
+@media (max-width: 480px) {
+    .qr-popout-card { padding: var(--s-5) var(--s-4) var(--s-4); }
+    .qr-popout-frame { width: 200px; height: 200px; }
+}

@@ -1,8 +1,8 @@
 /* ==========================================================
-   HAVEN — Login page functions
-   One login for everyone. The server decides the account type
-   (client, staff or admin) and the page sends them to the
-   matching dashboard.
+   HAVEN — Login page
+   One login for everyone. The server decides the account
+   type (client, staff or admin) and the page sends them to
+   the matching dashboard.
    ========================================================== */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const alertBox = document.getElementById('loginAlert');
     const card = document.getElementById('loginCard');
 
-    // Where each account type goes after signing in (change to your pages)
     const DASHBOARDS = {
         client: 'client-dashboard.html',
         staff: 'staff-dashboard.html',
@@ -22,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ==========================================
        1) AFTER REGISTER — success notice + prefill ID
-       register.js redirects to index.html?registered=1&id=HV-1001
        ========================================== */
     const params = new URLSearchParams(window.location.search);
     if (params.get('registered') === '1') {
@@ -78,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const input = document.getElementById(fieldId);
         if (!rule || !input) return true;
 
-        // Never trim the password
         const value = fieldId === 'password' ? input.value : input.value.trim();
 
         if (!value) {
@@ -121,7 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.toggle-pw').forEach((btn) => {
         const input = document.getElementById(btn.dataset.target);
         if (!input) return;
-
         btn.addEventListener('mousedown', (e) => e.preventDefault());
         btn.addEventListener('click', () => {
             const show = input.type === 'password';
@@ -132,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Caps Lock hint
     const capsHint = document.querySelector('[data-error-for="password"]');
     pwInput?.addEventListener('keyup', (e) => {
         if (!e.getModifierState || !capsHint) return;
@@ -145,37 +140,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ==========================================
-       4) SIGN IN
+       4) DEMO STAFF/ADMIN ACCOUNTS
+       ========================================== */
+    const DEMO_ACCOUNTS = [
+        { id: 'STAFF-204', password: 'Staff#2026', role: 'staff' },
+        { id: 'admin',     password: 'Admin#2026', role: 'admin' }
+    ];
+
+    /* ==========================================
+       5) LOGIN REQUEST — reads registered accounts first
+       ========================================== */
+    function loginRequest(id, password) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                const lower = id.toLowerCase();
+
+                // 1) Registered accounts
+                let accounts = {};
+                try {
+                    accounts = JSON.parse(localStorage.getItem('haven.accounts') || '{}');
+                } catch { accounts = {}; }
+
+                const accountKey = Object.keys(accounts).find((k) => k.toLowerCase() === lower);
+                if (accountKey) {
+                    const account = accounts[accountKey];
+                    if (account.password === password) {
+                        resolve({ ok: true, role: 'client', profile: account.profile });
+                        return;
+                    }
+                    resolve({ ok: false });
+                    return;
+                }
+
+                // 2) Demo staff/admin
+                const user = DEMO_ACCOUNTS.find(
+                    (u) => u.id.toLowerCase() === lower && u.password === password
+                );
+                resolve(user ? { ok: true, role: user.role, profile: null } : { ok: false });
+            }, 900);
+        });
+    }
+
+    /* ==========================================
+       6) SIGN IN
        ========================================== */
     function shake() {
         if (!card) return;
         card.classList.add('shake');
         setTimeout(() => card.classList.remove('shake'), 400);
-    }
-
-    // ---- DEMO ACCOUNTS (testing only) --------------------------------
-    // Delete this list when your backend is ready. Passwords must never be
-    // stored in front-end code on a real site.
-    const DEMO_ACCOUNTS = [
-        { id: 'HV-1001',   password: 'Client#2026', role: 'client' },
-        { id: 'STAFF-204', password: 'Staff#2026',  role: 'staff'  },
-        { id: 'admin',     password: 'Admin#2026',  role: 'admin'  }
-    ];
-
-    // Replace this with a real request to your backend. It should resolve to
-    //   { ok: true, role: 'client' | 'staff' | 'admin' }   or   { ok: false }
-    // e.g. fetch('/api/login', { method: 'POST',
-    //        headers: { 'Content-Type': 'application/json' },
-    //        body: JSON.stringify({ id, password }) }).then((r) => r.json());
-    function loginRequest(id, password) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const user = DEMO_ACCOUNTS.find(
-                    (u) => u.id.toLowerCase() === id.toLowerCase() && u.password === password
-                );
-                resolve(user ? { ok: true, role: user.role } : { ok: false });
-            }, 900);
-        });
     }
 
     form?.addEventListener('submit', async (e) => {
@@ -197,6 +209,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await loginRequest(idInput.value.trim(), pwInput.value);
 
             if (result && result.ok && DASHBOARDS[result.role]) {
+                try {
+                    const session = {
+                        role: result.role,
+                        profile: result.profile || null,
+                        loggedInAt: Date.now()
+                    };
+                    localStorage.setItem('haven.session', JSON.stringify(session));
+
+                    if (result.profile) {
+                        localStorage.setItem('haven.guestName', result.profile.name || '');
+                        localStorage.setItem('haven.guestProfile', JSON.stringify(result.profile));
+
+                        const stayKey = 'haven.accommodation.v1';
+                        let existing = null;
+                        try { existing = JSON.parse(localStorage.getItem(stayKey) || 'null'); } catch { existing = null; }
+                        if (!existing) {
+                            const checkIn = result.profile.checkIn || new Date().toISOString().slice(0, 10);
+                            const checkOut = result.profile.checkOut
+                                || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+                            localStorage.setItem(stayKey, JSON.stringify({
+                                checkIn,
+                                checkOut,
+                                checkoutRequest: null,
+                                notifications: [],
+                                requests: []
+                            }));
+                        }
+                    }
+                } catch (err) { console.warn('Session save failed:', err); }
+
                 window.location.href = DASHBOARDS[result.role];
                 return;
             }
@@ -210,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ==========================================
-       5) SHAKE ANIMATION (inject once)
+       7) SHAKE ANIMATION (inject once)
        ========================================== */
     if (!document.getElementById('loginShakeCSS')) {
         const style = document.createElement('style');
